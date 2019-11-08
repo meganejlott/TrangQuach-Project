@@ -1,0 +1,49 @@
+---
+title: "Table 1"
+output: html_document
+---
+
+```{r, echo=FALSE, message=FALSE}
+library(table1)
+library(tidyverse)
+library(knitr)
+library(tableone)
+library(finalfit)
+library(here)
+library(mlr)
+```
+
+```{r, echo=FALSE}
+# Read data
+NHANES2 <- readRDS(here("data","processing_data", "NHANES2.Rda"))
+
+
+# Create table 1
+## Format for variables name
+labels <- list(
+  variables=list(age="Age", sex1="Sex", race="Race/Ethnicity", 
+                 US_born="Country of Birth", marital="Marital Status",
+                 education="Education", HH_member="Number of household members",
+                 hypertension="Hypertension", diabetes="Diabetes", 
+                 HD="Heart Diseases", H_TCHOL="Total Cholesterol", Low_HDL="HDL", 
+                 H_LDL="LDL",H_TG="Triglycerid",CKD="Chronic Kidney Disease", 
+                 HAV="Hepatitis A", hepatitis='Other hepatitis'),
+  groups= list("","Tuberculosis Infection"))
+
+## Format for column names
+
+strata <- c(list(Total=NHANES2), split(NHANES2, NHANES2$TB_Infection))
+
+my.render.cont <- function(x) {
+  with(stats.apply.rounding(stats.default(x), digits=2), 
+       c("","Mean (IQR)"=sprintf("%s (%s - %s)", MEDIAN, Q1, Q3)))}
+my.render.cat <- function(x) {
+  c("", sapply(stats.default(x), 
+  function(y) with(y, sprintf("%d (%.1f %%)", FREQ, PCT))))
+}
+tablex<-table1(strata, labels, groupspan = c(1,2) ,render.continuous=my.render.cont, 
+       render.categorical=my.render.cat)
+
+tablex
+```
+

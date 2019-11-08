@@ -1,0 +1,104 @@
+---
+title: 'Co-epidemic of Tuberculosis Infection and Chronic Diseases'
+author: ""
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+documentclass: article
+output:
+  bookdown::word_document2:
+    toc: false
+bibliography: []
+csl: american-journal-of-epidemiology.csl
+---
+
+```{r library, include=FALSE, echo=FALSE, cache.lazy=FALSE}
+library(table1)
+library(knitr)
+library(tidyverse)
+library(finalfit)
+library(readr) # read RDA file
+library(here)
+```
+
+
+
+```{r setup, include=FALSE, echo=FALSE, cache.lazy=FALSE}
+
+knitr::opts_chunk$set(warning=FALSE)
+
+# Rounding rules
+options(digits = 2)
+
+# Loading results of table 1 and table 2
+table1.2 <- readRDS(here("results" ,"table1.2.Rda"))
+table1.1 <- readRDS(here("results","table1.1.Rda"))
+table1.3 <- readRDS(here("results","table1.3.Rda"))
+table2 <- readRDS(here("results", "table2.Rda"))
+
+explanatory <- c("age","sex1","BMI","race","US_born", "marital",
+ "education","income","HH_member","hypertension","diabetes","HD",     "H_TCHOL","Low_HDL","H_LDL", "H_TG","CKD", "HAV", "hepatitis")
+
+dependent <- "TB_Infection"
+```
+# Authors
+
+* Trang Quach^1^, Department of Epidemiology and Biostatistics, The University of Georgia, Athens, GA, USA
+
+^1^ Corresponding Author: Trang Quach
+
+Address: 101 Buck Rd, Miller Hall, Athens, Georgia 30606   
+
+Email: thq66243@uga.edu
+
+# Abstract
+
+
+*Keywords*: Tuberculosis infection; Chronic diseases
+
+# QUESTION FOR DR. HANDEL
+In table 3 (multivariate and univariate analysis), I use the finalfit function (from finalfit package) to produce this table.
+
+Let look at variables sex, the odds ratio is 0.75 (Male vs. Female). But when looking at the column 3 and 4 (about percentage). I realize that the OR should be >1. I double check the data. The numbers in column 3 and 4 are correct.How can I fix the OR?
+
+Another question is about table 1. I tried tableone and finalfit package 
+to produce the table 1 which is about the characteristics of participants. Both packages do not give the format tables that I want (output tables are hard to read).
+
+I also tried another package called table1. This package provide the output table that I want. Howerver, the table is only html output and I cannot have word document. Is there any way to have this table 1 in word? In product, I include 'ask_question_for table 1' html file which has table 1 in format that I want.
+
+Thank you.
+ 
+
+# INTRODUCTION
+
+# METHODS
+
+## Data Collection
+
+
+# RESULTS
+
+```{r , echo=FALSE}
+knitr::kable(table1.2,caption = "**Characteristics of participants**")
+
+```
+
+
+
+
+
+
+
+```{r , echo=FALSE}
+knitr::kable(table1.3, row.names = FALSE, caption = "**Characteristics of participants stratified by TB infection status**")
+```
+
+
+```{r, echo=FALSE}
+knitr::kable(table2, row.names = FALSE, caption = "**Univariate and multivariate analysis**")
+```
+
+
+```{r Figure 1, echo=FALSE}
+
+```
+

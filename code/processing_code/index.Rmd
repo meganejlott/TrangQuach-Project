@@ -1,6 +1,8 @@
 ---
 title: "Trang Quach - Project part2 submission"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 # Loading package

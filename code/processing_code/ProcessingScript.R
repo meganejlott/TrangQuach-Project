@@ -5,6 +5,8 @@ library(tidyverse)
 library(skimr)
 library(nephro) # for GFR calculation
 library(tableone)
+library(table1)
+library(visdat)
 
 # Import data
 ## demopgraphic data
@@ -62,13 +64,14 @@ NHANES <- mylist %>%
   reduce(full_join, by = "SEQN") %>% # merge all dataset
   select(myvar)  %>% # selected variables that will be used
   filter(RIDAGEYR >= 18 & ! is.na(TBDRUIND)) %>% # only included records with TST test and age >= 18
-  mutate(TB_Infection = if_else(TBDRUIND >= 10, "Yes", "No")) %>% # Create outcome variable
-  # calcuate the mean of systolic/diastolic blood pressure from 4 measures, and define hypertension
+  mutate(TB_Infection = if_else(TBDRUIND >= 10, "Yes", "No"))  # Create outcome variable
+NHANES <- NHANES %>%  
+  # calculate the mean of systolic/diastolic blood pressure from 4 measures, and define hypertension
   ## BPQ050A is currently taking hypertension drug
   mutate(sys_mean= rowMeans(subset(NHANES ,select = c(BPXSY1,BPXSY2,BPXSY3,BPXSY4)), na.rm = TRUE)) %>%
   mutate(dia_mean= rowMeans(subset(NHANES ,select = c(BPXDI1,BPXDI2,BPXDI3,BPXDI4)), na.rm = TRUE)) %>%
   mutate(BP = if_else(sys_mean>=130 & dia_mean>=80, 1, 2)) %>% #hypertension is final var
-  mutate(hypertension = case_when(BP %in% c(1,2) & BPQ050A==1 ~ 1,
+  mutate(hypertension = case_when((BP %in% c(1,2)| is.na(BP)) & BPQ050A==1 ~ 1,
                                   BP==1 & BPQ050A %in% c(2,9,NA) ~ 1,
                                   BP==2 & BPQ050A %in% c(2,9,NA) ~ 2)) %>%
   # History of Heart Disease
@@ -80,20 +83,23 @@ NHANES <- mylist %>%
                              (BPQ100D %in% c(2,9)|is.na(BPQ100D)) & TCHOL=="Normal" ~ "Normal")) %>%
   mutate(LDL = case_when(LBDLDL< 100 ~ "Normal",
                          LBDLDL>= 100 & LBDLDL<=159 & HD==1 ~ "High",
-                         LBDLDL>= 100 & LBDLDL<=159 & (HD==2|is.na(HD)) ~ "Normal")) %>%
+                         LBDLDL>= 100 & LBDLDL<=159 & (HD==2|is.na(HD)) ~ "Normal",
+                         LBDLDL >=160 ~ "High")) %>%
   mutate(H_LDL = case_when(BPQ100D==1 ~ "High", ## H_LDL is final var
                           (BPQ100D %in% c(2,9)|is.na(BPQ100D)) & LDL=="High" ~ "High",
-                          (BPQ100D %in% c(2,9)|is.na(BPQ100D)) & LDL=="Normal" ~ "Normal")) %>%
+                          (BPQ100D %in% c(2,9)|is.na(BPQ100D)) & LDL=="Normal" ~ "Normal",
+                          TRUE ~ "Unknown")) %>%
   mutate(HDL = case_when(LBDHDD<40 & RIAGENDR==1 ~ "Low",
                          LBDHDD<50 & RIAGENDR==2 ~ "Low",
-                         LBDHDD>40 & RIAGENDR==1 ~ "Normal",
-                         LBDHDD>50 & RIAGENDR==2 ~ "Normal")) %>%
+                         LBDHDD>=40 & RIAGENDR==1 ~ "Normal",
+                         LBDHDD>=50 & RIAGENDR==2 ~ "Normal")) %>%
   mutate(Low_HDL = case_when(BPQ100D==1 ~ "Low",
                             (BPQ100D %in% c(2,9)|is.na(BPQ100D)) & HDL=="Normal" ~ "Normal",
                             (BPQ100D %in% c(2,9)|is.na(BPQ100D)) & HDL=="Low" ~ "Low")) %>%
   mutate(H_TG = case_when(BPQ100D==1 ~ "High",
                         (BPQ100D %in% c(2,9)|is.na(BPQ100D)) & LBXTR>= 200 ~ "High",
-                        (BPQ100D %in% c(2,9)|is.na(BPQ100D)) & LBXTR< 200 ~ "Normal")) %>%
+                        (BPQ100D %in% c(2,9)|is.na(BPQ100D)) & LBXTR< 200 ~ "Normal",
+                        TRUE ~ "Unknown")) %>%
   # Diabetes
   mutate(FPG = if_else(LBDGLUSI>=7.0, 1, 2)) %>%
   mutate(OGTT = case_when(LBDGLTSI>=11.1 & GTDCODE==0 ~ 1,
@@ -117,6 +123,9 @@ NHANES <- mylist %>%
   mutate(HDV = if_else(LBDHD==1, "Yes","No")) %>% #skip heptatis D because only 5 person is positive
   ## Hepatitis E
   mutate(HEV = if_else(LBDHEM==1, "Yes","No")) %>%#may skip this variable
+  ## Hepatitis in general
+  mutate(hepatitis = case_when(HBV=="Yes"|HCV=="Yes"|HDV=="Yes"|HEV=="Yes" ~ "Yes",
+                               TRUE ~ "No")) %>%
   # HIV: skip because only 19 people positive
   # GFR: kidney chronic disease
   mutate(sex= if_else(RIAGENDR==1, 1,0)) %>%
@@ -134,7 +143,7 @@ NHANES <- mylist %>%
                          RIDRETH3==6 ~ "Asian",
                          RIDRETH3==7 ~ "Others")) %>%
   mutate(US_born= if_else(DMDBORN4==1, "Yes","No")) %>%
-  mutate(marital= if_else(DMDMARTL %in% c(1,6), "Live with partners", "Not live with partner")) %>%
+  mutate(marital= if_else(DMDMARTL %in% c(1,6), "Live with partners", "Not live with partners")) %>%
   mutate(education= case_when(DMDEDUC2 %in% c(1,2) ~ "< High school",
                          is.na(DMDEDUC2) & (DMDEDUC3<12|DMDEDUC3 %in% c(55,66)) ~ "< High school",
                          is.na(DMDEDUC2) & (DMDEDUC3 %in% c(12,13,14)) ~ "High school",
@@ -145,39 +154,83 @@ NHANES <- mylist %>%
   mutate(income= case_when(INDHHIN2 %in% c(1,2,3,4,13) ~ "<20,000",
                            INDHHIN2 %in% c(5,6,7,8,12) ~ "20,000 - <55,000",
                            INDHHIN2 %in% c(9,10,14) ~ "55,000 - <100,000",
-                           INDHHIN2 %in% c(15) ~ ">= 100,000")) %>%
+                           INDHHIN2 %in% c(15) ~ ">= 100,000"))%>%
   mutate(HH_member= case_when(DMDHHSIZ %in% c(1,2) ~ "<= 2",
-                              DMDHHSIZ>2 & DMDHHSIZ<=5 ~ "3-5",
+                              DMDHHSIZ>2 & DMDHHSIZ<=5 ~ "3 - 5",
                               DMDHHSIZ %in% c(6,7) ~ ">= 6")) %>%
   mutate(BMI= case_when(BMXBMI <18.5 ~ "Underweight",
                         BMXBMI>=18.5 & BMXBMI<24.9 ~ "Normal weight",
                         BMXBMI>=24.9 & BMXBMI<29.9 ~ "Overweight",
-                        BMXBMI>=29.9 ~ "Overweight")) %>%
+                        BMXBMI>=29.9 ~ "Obese")) %>%
   mutate(age = as.numeric(RIDAGEYR))
 
-myvar1 <- c("age","sex1","BMI","race","US_born", "marital","education","income",
-            "HH_member", "hypertension","diabetes","HD", "H_TCHOL","Low_HDL", "H_LDL", "H_TG",
-            "CKD", "HAV", "HBV", "HCV", "HDV", "HEV")
-
-
-(table1.1 <- CreateTableOne(vars = myvar1,data=NHANES, test=FALSE))
-(table1.2 <- CreateTableOne(vars = myvar1, strata= "TB_Infection", data=NHANES, test=TRUE))
 
 
 
-library(table1)
-table1( ~ age+sex1+BMI | TB_Infection, data=NHANES)
+# Format the levels or type of variables
+NHANES1 <- NHANES %>% 
+  mutate(race= fct_infreq(race)) %>%
+  mutate(BMI= factor(BMI, levels = c("Normal weight","Underweight","Overweight","Obese"))) %>%
+  mutate(US_born= factor(US_born, levels=c("No","Yes"))) %>%
+  mutate(income = factor(income, levels = c("<20,000", "20,000 - <55,000","55,000 - <100,000", 
+                                            ">= 100,000"))) %>%
+  mutate(hypertension = factor(hypertension, levels = c(2,1), labels = c("No", "Yes"))) %>%
+  mutate(diabetes = factor(diabetes, levels = c(2,1), labels = c("No","Yes"))) %>%
+  mutate(HD = factor(HD, levels = c(2,1), labels = c("No", "Yes"))) %>%
+  mutate(CKD = factor(CKD, levels = c("Stage 1", "Stage 2", "Stage >= 3"))) %>%
+  mutate(HAV = factor(HAV, levels = c("No","Yes"))) %>%
+  mutate(HBV = factor(HBV, levels = c("Yes", "No"))) %>%
+  mutate(HCV = factor(HCV, levels = c("Yes", "No"))) %>%
+  mutate(HDV = factor(HDV, levels = c("Yes", "No"))) %>%
+  mutate(HEV = factor(HEV, levels = c("Yes", "No"))) %>%
+  mutate(hepatitis = factor(hepatitis, levels = c("No","Yes"))) %>%
+  mutate(HH_member = factor(HH_member, levels = c("<= 2", "3 - 5", ">= 6"))) %>%
+  mutate(TB_Infection = factor(TB_Infection, levels = c("Yes","No"))) %>%
+  mutate(TB_Infection1= ifelse(TB_Infection=="Yes", "TB Infection Yes", 
+                               "TB Infection No")) %>%
+  mutate(sex1= factor(sex1, levels = c("Female", "Male"))) %>%
+  mutate(marital = factor(marital, levels = c("Not live with partners",
+                                              "Live with partners"))) %>%
+  mutate(education = factor(education, levels = c("< High school","High school","Tertiary"))) %>%
+  mutate(H_TCHOL= factor(H_TCHOL, levels = c("Normal", "High")), 
+         Low_HDL = factor(Low_HDL, levels = c("Normal", "Low")),
+         H_LDL = factor(H_LDL, levels = c("Normal", "High","Unknown")), 
+         H_TG=factor(H_TG, levels = c("Normal", "High","Unknown"))) %>%
+  mutate(race=factor(race, levels = c("Whites", "Black", "Asian","Mexican American",
+                                      "Hispanic", "Others")))
+
+  
+ 
+
+# Some variables are missing, I will drop the missing observation
+## We delete 14% of data
+NHANES2 <- NHANES1 %>%
+  drop_na(BMI,education,hypertension,diabetes,HD,H_TCHOL,Low_HDL,CKD,HAV,income)
+
+## label variables
+var_Label_List <- list(age="Age", sex1="Sex", race="Race/Ethnicity", 
+                 US_born="Country of Birth", marital="Marital Status",
+                 education="Education", HH_member="Number of household members",
+                 hypertension="Hypertension", diabetes="Diabetes", 
+                 HD="Heart Diseases", H_TCHOL="Total Cholesterol", Low_HDL="HDL", 
+                 H_LDL="LDL",H_TG="Triglycerid",CKD="Chronic Kidney Disease", 
+                 HAV="Hepatitis A", hepatitis='Other hepatitis', income="Income")
+
+labelled::var_label(NHANES2)<-var_Label_List
+# Save the cleaned data 
+saveRDS(NHANES2, file="data/processing_data/NHANES2.Rda")
+
+# Save the workspace
+#save.image("~/EPID8060/TrangQuach-Project/code/processing_code/ProcessingWork.RData")
+
+table1( ~ age+sex1+BMI+race+US_born+marital+education+income+HH_member+
+          hypertension+diabetes+HD+H_TCHOL
+        +Low_HDL+H_LDL+H_TG+CKD+ HAV+hepatitis | TB_Infection1, data=NHANES2, overall = "Total")
+
+table(NHANES2$TB_Infection1)
 
 
 
 
-tabUnmatched <- CreateTableOne(vars = xvars, strata = "select", data=icd_psmean, test = FALSE)
-print(tabUnmatched, smd=TRUE)
 
-
-
-
-
-NHANES %>% count(is.na(BMXBMI))
-NHANES %>% mean(DMDHHSIZ, na.rm = FALSE)
 

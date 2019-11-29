@@ -7,17 +7,19 @@ documentclass: article
 output:
   bookdown::word_document2:
     toc: false
-bibliography: []
+bibliography: ../x.bib
 csl: american-journal-of-epidemiology.csl
 ---
 
 ```{r library, include=FALSE, echo=FALSE, cache.lazy=FALSE}
+
 library(table1)
 library(knitr)
 library(tidyverse)
 library(finalfit)
 library(readr) # read RDA file
 library(here)
+library(stringr)
 ```
 
 
@@ -29,16 +31,70 @@ knitr::opts_chunk$set(warning=FALSE)
 # Rounding rules
 options(digits = 2)
 
+# loading the full NHANES data which is raw data after combining all dataset
+NHANES_full<-readRDS(file = here("data","raw_data","NHANES_full.Rda"))
+
+# loading the NHANES2 which is dataset used for analysis
+NHANES2 <- readRDS(file=here("data","processing_data", "NHANES2.Rda"))
+
+# doing some calculation about...
+total_par <- nrow(NHANES_full) # total no. of participants in NHANES 2011-2012
+
+exclude_age <- nrow(NHANES_full[NHANES_full$RIDAGEYR < 18 ,]) #no. of exclude due to age<18
+
+exclude_TSTmissing <- total_par - exclude_age - nrow(NHANES_full[NHANES_full$RIDAGEYR >= 18 & !is.na(NHANES_full$TBDRUIND),]) # no. participants exclude due to missing TST
+
+exclude_missingother <- (total_par - exclude_age - exclude_TSTmissing - nrow(NHANES2)) # no .of people exclude due to missing in other variables
+
+percent_excludemissing <- 100*(exclude_missingother + exclude_TSTmissing)/nrow(NHANES_full[NHANES_full$RIDAGEYR >= 18,]) # percentage missing due to missng variables (outcome and exposure variables)
+
 # Loading results of table 1 and table 2
-table1.2 <- readRDS(here("results" ,"table1.2.Rda"))
-table1.1 <- readRDS(here("results","table1.1.Rda"))
 table1.3 <- readRDS(here("results","table1.3.Rda"))
+rownames(table1.3) <- c()
 table2 <- readRDS(here("results", "table2.Rda"))
 
-explanatory <- c("age","sex1","BMI","race","US_born", "marital",
- "education","income","HH_member","hypertension","diabetes","HD",     "H_TCHOL","Low_HDL","H_LDL", "H_TG","CKD", "HAV", "hepatitis")
 
-dependent <- "TB_Infection"
+# take the total column from the table 1 (1.3)
+
+total <- table1.3$Total
+total_no <- word(total, 1)
+total_percent <- word(total,2) %>% str_remove("[)]") %>% str_remove("[(]") 
+
+# take the number from table 2
+
+OR_uni <- table2[,5]
+OR_uni1 <- as.numeric(word(OR_uni,1))
+OR_uni2 <- word(OR_uni,2)
+
+
+# loading results from multivariate selection
+nullACC <- readRDS(here("results", "nullACC.Rda"))
+MultiSel <- readRDS(here("results","MultiSel.Rda"))
+unisel <- readRDS(here("results", "unisel.Rda"))
+ACC_fullmodel <- readRDS(here("results", "ACC_fullmodel.Rda"))
+
+# loading the table3 with multivariate analysis including variables with p-value less than 0.1 in univariate analyses in the final model. Then removing gradually factors not significantly associated with LTBI
+table3 <- readRDS(here("results", "table3.Rda"))
+
+
+table3$m1 <- word(table3$`OR (multivariable)`,1)
+table3$m2 <- word(table3$`OR (multivariable)`,2) %>% 
+  str_remove("[)]") %>% str_remove("[(]") 
+
+# loading the table3 with multivariate analysis including variables with p-value less than 0.1 in univariate analyses in the final model.
+
+table4 <- readRDS(here("results", "table4.Rda"))
+
+
+table4$m1 <- word(table4$`OR (multivariable)`,1)
+table4$m2 <- word(table4$`OR (multivariable)`,2) %>% 
+  str_remove("[)]") %>% str_remove("[(]") 
+
+
+# number of participants with HIV infection
+HIV_infected <- NHANES2 %>% filter(LBDHI==1)
+
+
 ```
 # Authors
 
@@ -52,53 +108,92 @@ Email: thq66243@uga.edu
 
 # Abstract
 
+Objectives: We aim to determine the association between some chronic diseases with latent tuberculosis infection (LTBI) using National Health and Nutrition Examination Survey (NHANES) data. We considered these chronic diseases, including hypertension, diabetes, heart diseases, dyslipidemia, and chronic kidney diseases.
+
+Methods: We peformed a cross-sectional analysis of 2011-2012 NHANES data. Participants $\geq$ 18 years old were eligible. LTBI was defined by tuberculin skin test (TST). We tried five methods to select variables in the final model. Adjusted odds ratio of latent TB infection with other chronic diseases were calculated using logistic regression.
+
+Results: Chronic diseases and TST results were available for `r nrow(NHANES2)` (`r (100-percent_excludemissing)`%) included participants. Of these `r nrow(NHANES2)`, `r nrow(NHANES2[NHANES2$TB_Infection=="Yes",])` (`r nrow(NHANES2[NHANES2$TB_Infection=="Yes",])*100/nrow(NHANES2)`%) were infected with TB. In multivariate analysis, older age, males, race/ethnicity, non-US born, and lower level of education were significantly associated with LTBI. The odds of LTBI among Asians were `r table3[10,7]` (95% CI `r table3[10,8]`) times higher than Whites, which was the highest odds ratio among race/ethnicity. Males had addtional `r (as.numeric(table3$m1[3]) -1)*100`% risk of getting TB infection, compared to females. After adjusted for age, sex, race/ethnicity, US-born, and education, some chronic diseases such as hypertension, diabetes, heart diseases, dyslipidemia, and chronic kidney disease were not significantly associated with LTBI infection. In multivariate analyses, hepatitis A was significantly associated with LTBI (OR `r table3[48,7]`, 95% CI `r table3[48,8]`).  
+
+Conclusions: Hepatitis A is associated with LTBI among adults in the United States, even after adjusting for counfounding factors. Given hepatitis A increases the risk of active TB, patients with co-prevalent hepatitis A and LTBI may be targeted for latent TB treatment.
+ 
+
+
 
 *Keywords*: Tuberculosis infection; Chronic diseases
 
-# QUESTION FOR DR. HANDEL
-In table 3 (multivariate and univariate analysis), I use the finalfit function (from finalfit package) to produce this table.
-
-Let look at variables sex, the odds ratio is 0.75 (Male vs. Female). But when looking at the column 3 and 4 (about percentage). I realize that the OR should be >1. I double check the data. The numbers in column 3 and 4 are correct.How can I fix the OR?
-
-Another question is about table 1. I tried tableone and finalfit package 
-to produce the table 1 which is about the characteristics of participants. Both packages do not give the format tables that I want (output tables are hard to read).
-
-I also tried another package called table1. This package provide the output table that I want. Howerver, the table is only html output and I cannot have word document. Is there any way to have this table 1 in word? In product, I include 'ask_question_for table 1' html file which has table 1 in format that I want.
-
-Thank you.
- 
 
 # INTRODUCTION
 
+A dual burden due to complex relation between tuberculosis and chronic diseases and their respective treatments have been becoming a public health threat. The burden of communicable diseases is concentrated in low-income countries. However, non-communicable diseases, which presented 47% of the disease burden in 1990 in low-income countries, have been predicted to rise to 69% by 2020 [@Boutayeb2006]. Increasing industrialisation and urbanisation leads to higher rates of chronic diseases such as cardiovascular diseases, diabetes, obesity, hypertension, and etc. Chronic diseases poses a large financial burden in countries with limited resources. In addition, tuberculosis was a leading cause of mobility and mortality from a single infectious agent with an estimated 10 million cases and 1.6 million deaths in 2017 [@Global2017]. This makes TB the tenth leading cause of death, ranking above human immunodeficiency virus infection and accquired immune deficiency syndrome (HIV/AIDS) in the world. It has long been recognized that some infectious agents may predispose to, or trigger, some non-communicable diseases with examples including infectious contributions to cervical, liver and stomach cancers. In addition, it is well known that two of the most common infectious diseases in Africa, tuberculosis and HIV, may also be closely related to chronic non-communicable diseases. Diabetes prediposes to tuberculosis with some evidence that TB may also predipose to diabetes [@Jeon2008]. Similarly, hepatitis C and chronic kidney disease were found to be risk factors for TB [@Reis2011]. 
+
+The link between diabetes and tuberculsosis has been recognised for centuries. In recent decades, tuberculosis has increasingly become a problem in low-income countries, particularly those with non-insulin-dependent diabetes has emerged as a growing worldwide chronic health condition, as a consequence of increases in obesity, changing pattern of diet and physical activity, and aging populations. In the setting of the increasing overlap of populations at risk for both diseases, the combination of tuberculosis and diabetes represents a worldwide health threat. Besides diabetes, the understanding of the links between tuberculosis and other chronic diseases are limited. Athough existing evidence has demonstrated a relationship between chronic diseases and active TB, it is unclear whether chronic diseases also increases the risk of latent tuberculosis infection (LTBI). To address the gap in knowledge related to chronic diseases and LTBI, we aimed to examine the association between some chronic conditions such as hypertension, diabetes, heart diseases, dyslipidemia, chronic kidney diseases, and LTBI using NHANES data 2011 - 2012.
+
+
+
 # METHODS
 
-## Data Collection
+## Study design and population 
 
+We conducted a cross-sectional study using NHANES 2011-2012 data, the most recent cycle that includes both tuberculin skin test and QuantiFERON-TB Gold In Tube (QFT-GIT) to measure LTBI. Briefly, NHANES collects extensive person-level health data using three stages, stratified probability sample using clusters of persons in area-based segements which are nationally representative of US non-instittionalized civilians [@Landis1982]. Data collected in NHANES come from an in-person interview followed by a health examination and laboratory measurements [@Johnson2014]. Details of NHANES methodology have been published previously. In NHANES 2011-2012, 9756 completed the in-person interview, and 9338 completed the interview and received an examination [@DiseaseControl2013]. 
+
+The eligible participants were adults ($\geq$ 18 years) who completed the interview and health examination and had valid tuberculin skin test (TST) and chronic conditions status results. Participants with missing TST results and chronic conditions status were excluded. Except for triglycerid and LDL level, we keep analysing these variables although the percentages of missing were aproximately 41%. Biological specimen collection was performed in NHANES mobile examination centers. Samples were transported to laboratories across the US for processing.
+
+## Data cleaning
+
+We cleaned the data to format the variables and to check for variables with missing entries. We defined uninformative variables as less than 1% of patients with answering yes. During the cleaning process, we removed HIV variables because it is uninformative variables which only `r nrow(HIV_infected)` (`r nrow(HIV_infected)*100/nrow(NHANES2)`%) participants infected. Because only a small proportion of population have other hepatitis, we combined other hepatitis B, C, D, E together to have a informative variables.
+
+
+## Study measures and definitions
+
+Hypertension was defined by systolic blood pressure $\geq$ 130 and diastolic blood pressure $\geq$ 80 or currently receiving hypertension treatment. Participants were classified as having heart diseases if they were self-reported with congestive heart failure, coronary heart disease, angina pectoris, heart attack, and stroke. Non-fasting blood samples were analyzed for total cholesterol, HDL, LDL, and triglyceride. Total cholesterol was classifed as high if $\geq$ 240 mg/dL. HDL was classified as low if < 40 mg/dL for men and < 50 mg/dL for women. LDL was classified as high if 100 $\leq$ LDL $\leq$ 150 for participants with heart diseases and > 160 mg/dL for participants without heart diseases. Triglyceride was classified as high if $\geq$ 200 mg/dL. If participants took the prescription to lower cholesterol, they were classified as high total cholesterol, low HDL, high LDL, and high trigyceride. The chronic kidney disease stages were defined by glomerular filtration rate according to National Kidney Foundation [@Baumgarten2011]. Diabetes status of participants was defined by self-reported diabetes status and HbA1c. Participants who self-reported previous diabetes diagnosis by a health care professional were classified as having diabetes regardless of HbA1c. Participants without self-reported history of diabetes were classified by HbA1c or fasting plasma glucose, or 2-hour plasma glucose according to the American Diabetes Association guidelines. Hepatitis B virus (HBV), core antibody (anti-HBC), and surface antigen (HBsAg) response were determined using VITROS Anti-HBc assay and HBsAg assay, respectively. The results were defined as positive or negative. The HBsAg assay was only performed for participants that tested positive anti-HBC. Participants with a negative for anti-HBC were defined as negative for HBsAg. Hepatitis C antibody (anti-HCV) response was determined using VITROS Anti-HCV assay. Results were defined as positive or negative. We used the TST to diagnose tuberculosis infection. LTBI was defined as an induration $\geq$ 10 mm. 
+
+
+## Statistical analyses
+
+We summarized characteristics of study population with proportions for categorical variables and with mean and standard deviation for continuous variables (Table \@ref(tab:table1)). To examine the association between chronic conditions and LTBI, we used bivariate analyses and multiple logistic regression. We performed bivariate logistic regression to estimate the crude odds ratio for the association between LTBI and a set of participants' characteristics. The factors that were associated with LTBI in bivariate analysis with p-value < 0.1 were included in multivariate regression analysis. To determine the variables included in our final model, we tried four selection methods such as sequential forward selection (sfs), sequential backward selection (sbs), sequential floating forward selection (sffs), and sequential floating backward selection (sfbs) to maximize the accuracy. As results from sbs, sfs, and sffs methods, no variable is selected. For sfbs method, only age is selected. However, the accuracy was the same as the null model. I presented the multivariate analysis with only age to illustrate how I did multivariate and present the results although I should skip the multivariate analysis in this situation. We also tried fifth method to select the final model. The factors that were associated with LTBI in a univariate analysis with p-value $\leq$ were included in multivariate regression analysis. The likelihood ratio tests were used to compare nested model. The final model only included variables with p-value < 0.1. All two-sided p-value < 0.05 was considered statistically significant for all tests. 
+
+All analyses were performed in R (3.6.1). We used the mlr package for cross-validation and sequential model selection, and finalfit package for univariate and multivariate analyses. The supplementary material includes all of the code and data required to reproduce the results.
 
 # RESULTS
 
-```{r , echo=FALSE}
-knitr::kable(table1.2,caption = "**Characteristics of participants**")
+## Study population characteristics
 
-```
+For NHANES 2011 to 2012, the study enrolled `r total_par` participants. We excluded `r exclude_age` participants with age less than 18 years old, `r exclude_TSTmissing` participants without TST results, and `r exclude_missingother` participants with missing in other variables. We totally excluded `r percent_excludemissing`% of data due to missingness. Finally, `r nrow(NHANES2)` participants were included in the analysis. 
 
-
-
-
+Of these `r nrow(NHANES2)` participants, `r nrow(NHANES2[NHANES2$TB_Infection=="Yes",])` (`r nrow(NHANES2[NHANES2$TB_Infection=="Yes",])*100/nrow(NHANES2)`%) were infected with TB. The mean of age was `r total_no[1]` years (sd=`r total_percent[1]`). The percentage of male was `r total_percent[3]`%. The overweight and obsese participants accounted for `r total_percent[6]`% and `r total_percent[7]`%, respectively. The proportion of participants born in US was `r total_percent[15]`%. There were `r total_percent[29]`% with hypertension, `r total_percent[31]`% with diabetes, `r total_percent[33]`% with heart diseases, `r total_percent[46]`% with chronic kidney diseases at stage 3 or more, and `r total_percent[48]`% with hepatitis A 
+(Table \@ref(tab:table1)). The purpose of this analysis is to compare participants with and without TB infection in temrs of chronic diseases. Hence, we stratified the Table \@ref(tab:table1) by the TB infection status.
 
 
-
-```{r , echo=FALSE}
+```{r table1, echo=FALSE, results='asis'}
 knitr::kable(table1.3, row.names = FALSE, caption = "**Characteristics of participants stratified by TB infection status**")
 ```
 
+The univariate and multivariate analyses for risk factors of TB infection are shown in table \@ref(tab:table2). Older age, males, non-whites, non-US born, lower education, more household members, living with partners, diabetes, and hepatitis A were risk factors for TB infection. Males had addtional `r (OR_uni1[3] -1)*100`% risk of getting TB infection, compared to females. Asian and Hispanic had the highest odd ratio of getting LTBI (OR `r OR_uni1[10]`, 95% CI `r OR_uni2[10]` and OR `r OR_uni1[12]`, 95% CI `r OR_uni2[12]`, respectively), compared to Whites. Participants born in US experienced `r OR_uni1[15]` (95% CI `r OR_uni2[15]`) times lower odds of getting LTBI, compared to non-US born participants. Diabetic patients had `r OR_uni1[31]` times higher odds of getting LTBI than non-diabetic patients. Patients with hepatitis A increased risk of getting TB infection (OR `r OR_uni1[48]`, 95% CI `r OR_uni2[48]`) (Table \@ref(tab:table2)). Howerver, when using accuracy as a indicator to evaluate the univariate models, all univariate models did not gain more accuracy than the null model.
 
-```{r, echo=FALSE}
-knitr::kable(table2, row.names = FALSE, caption = "**Univariate and multivariate analysis**")
+For multivariate analyses, the variables selection process was conducted with four methods, including sequential forward selection (sfs), sequential backward selection (sbs), sequential floating forward selection (sffs), and sequential floating backward selection (sfbs) to maximize the accuracy. The full model did not gain more accuracy than the null model (`r ACC_fullmodel*100` vs. `r nullACC*100`). The sfs, sbs, and sffs did not select any variables. The sfbs method selected only age in the final model (accuracy `r MultiSel[2,2]*100`). In multivariate analyses, only age was included in the model (Table \@ref(tab:table2))
+
+We also tried another approach for doing multivariate analyses. We selected all variables with p-value $\leq$ 0.1 in univariate analysis into multivariate model. The results of this approach were presented in figure \@ref(fig:Figure1). In this approach, older age, males, non-whites, non-US born, and hepatitis A were still risk factors associated with LTBI. In this approach, diabetes was not significantly associated with LTBI and therefore not included in the final model. After adjusted for other variables, age and sex had the similar effect sizes as the univariate analyses (OR `r table3[1,7]`, 95% CI `r table3[1,8]` and OR `r table3[3,7]`, 95% CI `r table3[3,8]`, respectively). The effect sizes of race/ethnicity reduced substaintially in multivariate analyses (for example, Asian OR `r table3[10,7]`, 95% CI `r table3[10,8]` in multivariate analyses vs. OR `r OR_uni1[10]`, 95% CI `r OR_uni2[9]` in univariate analyses). Similarly, patients with hepatitis A had OR `r table3[48,7]` (95% CI `r table3[48,8]`) in multivariate model, compared with OR `r OR_uni1[48]` (95% CI `r OR_uni2[48]`) in univariate model. After adjusted for other variables, particpants with tertiary education had lower odds of getting TB infection than participants without high school education (OR `r table3[20,7]`, 95% CI `r table3[20,8]`). The odds of LTBI among patients with chronic kidney stage 3 or more was marginally associated with LTBI (`r table3[46,7]`, 95% CI `r table3[46,8]`). 
+
+
+
+```{r table2, echo=FALSE}
+knitr::kable(table2, row.names = FALSE, caption = "**Univariate and multivariate logistic regression analysis for risk factors of LTBI**")
 ```
 
 
-```{r Figure 1, echo=FALSE}
-
+```{r Figure1, echo=FALSE, fig.cap="**Forest plot based on the results of multivariate abalysis of risk factors associated with LTBI. In this multivariate analysis, we do not use the automatic selection methods (sbs, sffs, sbfs, and sfs) for the final model selection.**"}
+knitr::include_graphics(here("results","forest.tiff"))
 ```
 
+# DiSCUSSION
+
+In this cross-sectional NHANES 2011-2012 study, we found that increasing age, being males, non-whites, non-US born, lower levels of education were risk factors associated with LTBI. Among these characteristics, being Asian had the highest odds ratio for the infection (OR `r table3[10,7]`, 95% CI `r table3[10,8]`). We also explore the effect of chronic diseases such as hypertension, diabetes, heart diseases, dyslipidemia (by total cholesterol level, HDL, LDL, and triglyceride), chronic kidney disease, hepatitis A, and other hepatitis on risk of having LTBI. In univariate analyses, we found that only diabetes, chronic kidney diseases, and hepatitis A were risk factors associated with LTBI. In multivariate analyses, only hepatitis A was significantly associated with LTBI (OR `r table3[48,7]`, 95% CI `r table3[48,8]`). Chronic kidney disease was marginally significantly associated with LTBI (Stage 3 or more vs. stage 1 OR `r table3[46,7]`, 95% CI `r table3[46,8]`). After adjusted for other variables, diabetes was not a risk factor for LTBI (OR `r table4[31,7]`, 95% CI `r table4[31,8]`). 
+
+Our study have several strengths. We used nationally representative of the US adult non-institutionalized civilian population to examine the association between LTBI and some chronic diseases. To our knowledge, this study is the largest and most generalizable analysis to compare the prevalence of LTBI among adults with and without some chronic diseases. NHANES data collected a comprehensive and intensive information about characteristics of participants. Thus, we are able to adjust and take into account numerous variables to advoid possible confouding. In addition, the prevalence of LTBI in our study population is less than 10%, so the magnitude in estimation of odds ration can be used to estimate the relative risk.
+
+Our study was subject to several limitations. First, there may have been misclassification of participants characterictics. For example, self-reported information on income via participant responses to a questionnaire, so participants may have reported higher income level due to social stigma. We categorized total cholesterol level, LDL, HDL, triglyceride and did not treat these variables as continuous variables. So, residual bias may have presented in our analyses. We used results from TST as a measurement of TB infection. Non-differential misclassifcation can occur because TST are potential cross-reaction with antigens found in the BCG vaccine, commonly used outside the United States [@Blumberg2014]. We did not account for the discordance between QFT-GIT and TST, and we cannot assess QFT-GIT reversion which is common at low values of antigen-nil [@Andrews2017]. Second, although we included numerous factors in the analyses to adjust for possible confounders, we did not adjust for the probability being exposed to someone with active TB. Although previous history of active TB was assessed via questionnaire and found to be associated with LTBI but not chronic diseases. The inability to adjust for probability of exposure to TB may have distort our estimated association between LTBI and chronic diseases. Third, our study was a cross-sectional design and as such we cannot determine the temporal relationship between LTBI and chronic diseases (hepetatitis A and chronic kidney disease). For example. our results are unable to differentiate whether the observed association was due to an increased risk of LTBI from hepatitis A or if LTBI may increase the risk of hepatitis A. Finally, the selection bias may present because we excluded `r percent_excludemissing`% of data due to missingness. 
+
+In conclusion, this study found that hepatitis A was significantly associated with an increased odds of LTBI prevalence in US adults, even after adjusting for key confounding factors. Diabetes only found to be a risk factor for LTBI in univariate analysis, but not in multivariate analysis. This can be due to selection bias because we exclude one third of data. Chronic kidney disease found significance in univariate and then marginal significance in multivariate analyses. Approximately 80% of NHANES adults with LTBI had hepatitis A, suggesting the need to evaluate the feasibility and effectiveness of screening patients with LTBI for hepatitis A patients. Information from this study greatly improves our understanding of the intersection of the TB and hepatitis A epidemics. Targeted efforts may be needed to addess the co-infection of hepatitis A and LTBI to prevent an increase in TB incidence worldwide.
+
+
+# REFERENCE

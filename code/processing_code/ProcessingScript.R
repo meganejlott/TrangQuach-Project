@@ -7,6 +7,7 @@ library(nephro) # for GFR calculation
 library(tableone)
 library(table1)
 library(visdat)
+library(finalfit) # for ff_label function
 
 # Import data
 ## demopgraphic data
@@ -60,11 +61,17 @@ myvar <- c("SEQN", "TBDRUIND", "BPQ050A", "BPXSY1", "BPXSY2", "BPXSY3", "BPXSY4"
 
 
 
-NHANES <- mylist %>% 
-  reduce(full_join, by = "SEQN") %>% # merge all dataset
+NHANES_full <- mylist %>% 
+  reduce(full_join, by = "SEQN")  # merge all dataset
+
+saveRDS(NHANES_full,file = "data/raw_data/NHANES_full.Rda")
+
+
+NHANES <- NHANES_full %>%
   select(myvar)  %>% # selected variables that will be used
   filter(RIDAGEYR >= 18 & ! is.na(TBDRUIND)) %>% # only included records with TST test and age >= 18
   mutate(TB_Infection = if_else(TBDRUIND >= 10, "Yes", "No"))  # Create outcome variable
+
 NHANES <- NHANES %>%  
   # calculate the mean of systolic/diastolic blood pressure from 4 measures, and define hypertension
   ## BPQ050A is currently taking hypertension drug
@@ -185,7 +192,7 @@ NHANES1 <- NHANES %>%
   mutate(HEV = factor(HEV, levels = c("Yes", "No"))) %>%
   mutate(hepatitis = factor(hepatitis, levels = c("No","Yes"))) %>%
   mutate(HH_member = factor(HH_member, levels = c("<= 2", "3 - 5", ">= 6"))) %>%
-  mutate(TB_Infection = factor(TB_Infection, levels = c("Yes","No"))) %>%
+  mutate(TB_Infection = factor(TB_Infection, levels = c("No","Yes"))) %>%
   mutate(TB_Infection1= ifelse(TB_Infection=="Yes", "TB Infection Yes", 
                                "TB Infection No")) %>%
   mutate(sex1= factor(sex1, levels = c("Female", "Male"))) %>%
@@ -197,7 +204,8 @@ NHANES1 <- NHANES %>%
          H_LDL = factor(H_LDL, levels = c("Normal", "High","Unknown")), 
          H_TG=factor(H_TG, levels = c("Normal", "High","Unknown"))) %>%
   mutate(race=factor(race, levels = c("Whites", "Black", "Asian","Mexican American",
-                                      "Hispanic", "Others")))
+                                      "Hispanic", "Others"))) %>%
+mutate(TB_Infection = ff_label(TB_Infection, "TB Infection")) 
 
   
  
@@ -209,28 +217,18 @@ NHANES2 <- NHANES1 %>%
 
 ## label variables
 var_Label_List <- list(age="Age", sex1="Sex", race="Race/Ethnicity", 
-                 US_born="Country of Birth", marital="Marital Status",
-                 education="Education", HH_member="Number of household members",
+                 US_born="US born", marital="Marital Status",
+                 education="Education", HH_member="No. of household members",
                  hypertension="Hypertension", diabetes="Diabetes", 
                  HD="Heart Diseases", H_TCHOL="Total Cholesterol", Low_HDL="HDL", 
-                 H_LDL="LDL",H_TG="Triglycerid",CKD="Chronic Kidney Disease", 
-                 HAV="Hepatitis A", hepatitis='Other hepatitis', income="Income")
+                 H_LDL="LDL",H_TG="Triglyceride",CKD="Chronic Kidney Disease", 
+                 HAV="Hepatitis A", hepatitis='Other hepatitis', income="Income",
+                 TB_Infection="TB Infection")
 
 labelled::var_label(NHANES2)<-var_Label_List
+
 # Save the cleaned data 
 saveRDS(NHANES2, file="data/processing_data/NHANES2.Rda")
-
-# Save the workspace
-#save.image("~/EPID8060/TrangQuach-Project/code/processing_code/ProcessingWork.RData")
-
-table1( ~ age+sex1+BMI+race+US_born+marital+education+income+HH_member+
-          hypertension+diabetes+HD+H_TCHOL
-        +Low_HDL+H_LDL+H_TG+CKD+ HAV+hepatitis | TB_Infection1, data=NHANES2, overall = "Total")
-
-table(NHANES2$TB_Infection1)
-
-
-
 
 
 

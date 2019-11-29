@@ -1,12 +1,6 @@
 # TrangQuach-Project
 
-# Part 3 submission
-My submission for part 3 is in sub-folder "manuscript" under "products" folder. I generated the word document, namely manuscript which contains the main findings.
-
-Please follow instructions (step 0, 1, 2) at the end of this readme to reproduce the
-analysis.
-
-Thanks.
+Please follow the step 0, 1, 2 below to reproduce the project.
 
 
 # Overview
@@ -29,7 +23,7 @@ This is a template for a data analysis project using R, Rmarkdown (and variants,
 
 * code: include the R code to produce the project. This folder contains two sub-folders
 
-    + Analysis_code: code for analysis. The results of all analysis are stored in folder result
+    + Analysis_code: code for analysis. The results of all analysis are stored in folder result. The Analysis_code includes two  R codes. First, AnalysisScript code contains my main analysis code to produce and save all results. Second, Multivariate analysis code is how I select the final model in my analysis.
 
     + Processing_code: code for cleaning and wrangling to produce the cleaned data which is used for analysis. The final output of this code is cleaned data, namely NHANES2.
 
@@ -37,24 +31,28 @@ This is a template for a data analysis project using R, Rmarkdown (and variants,
 
     + processing_data: contains the cleaned data, namely NHANES2
     
-    + raw_data: contains the raw data and codebook
+    + raw_data: contains the raw data and codebook. NHANES_full data is dataset which combined all raw data files. 
 
-* Product: contains the manuscript or pptx to present the results of the project
+* Product: contains the manuscript or pptx to present the results of the project, and bitex file for references
 
-    + manuscript: contains manuscript (word document) for the project
+    + manuscripts: contains manuscript (word document) for the project and Rmarkdown code to reproduce the manuscript word document. 
 
     + slides: contains the pptx
+    
+    + references: x.bib
 
 
 ## Instruction to reproduce the project
 
 * Step 0: reproduce the cleaned data (NHANES2)
 
-    + run processingScript in sub-folder processing_code to produce the cleaned data, namely NHANES2. NHANES will be stored in processing_data.
+    + run processingScript in sub-folder processing_code to produce the cleaned data, namely NHANES2. NHANES2 is stored in processing_data.
 
 * Step 1: reproduce the analysis 
 
-    + run the AnalysisScript in sub-folder Analysis_code to do analyssis and get the results. The results of analysis were stored in results folder.
+    + run the AnalysisScript in sub-folder Analysis_code to do analyssis and get the results. The results of analysis (table1.3, table2, table3, table4, and forest) were stored in results folder. 
+    
+    + run the Multivariate analysis code in sub-folder Analysis_code to do multivariate analysis and get result files (ACC_fullmodel, nullACC, MultiSel, and unisel)
 
 * Step 2: reproduce the manuscript
 

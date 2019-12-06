@@ -1,0 +1,183 @@
+# Overview
+
+Title of project: Co-epidemic of Tuberculosis Infection and Chronic Diseases
+
+Author of project: Trang Quach
+
+Reviewer: Megan Lott
+
+
+# Instructions
+
+Write your comments and feedback below for each section/compontent of the project. The goal should be to help the author improve their project. Make comments as constructive and actionable as possible. You can provide both criticism and praise.
+
+For each component, pick one summary statement by deleting the ones that do not apply and keeping only the one that you think most closely summarizes a given component. 
+
+Delete any sections/text of this template that are not part of your final review document.
+
+
+# Specific project content evaluation
+Evaluate the different parts of the project by filling in the sections below.
+
+
+## Background, Context and Motivation
+
+
+### Feedback and Comments
+
+This introduction was great - it was effective in portraying the relationship between Tuberculosis and Chronic Disease. In my understansing, there are common correlations between chronic infections and TB. In some cases, TB can predispose a patient to chronic disease, or a chronic disease may predispose a patient to TB. 
+
+This study evaluates a knowlege gap by examining the relationship between chronic disease and latent TB. This relationship is not yet well documented. 
+
+### Summary assessment
+
+* strong contextualization and motivation
+
+
+## Question description
+
+### Feedback and Comments
+
+In this paper, the the Questions/Hypotheses are included in the introduction. This appears to be an exploratory analysis to examine the relationship between chronic conditions and latent TB. 
+
+The question: What is the relationship between chronic conditions (hypertension, diabetes, heart diseases, dyslipidemia, chronic kidney diseases) and LTBI. 
+
+The NHANES data 2011 - 2012 includes data on chronic and infectious disease among a large set of patients. 
+
+Questions: 
+
+- Does the NHANES survey select participants that have chronic health conditions? Or is this a random sample? How are the patients recruited? Does this recruitment have an impact on the outcome?
+
+
+### Summary assessment
+
+* question/hypotheses clear
+
+
+## Data description
+
+
+### Feedback and Comments
+
+The data is explained well here. 
+
+Question: 
+
+Is the NHANES data publicly availible? Or, fo you need permissions or affiliations to access the data?
+
+### Summary assessment
+
+* source and overall structure of data well explained
+
+
+## Data wrangling and exploratory analysis
+
+The description of the data cleaning is precise and accurate. The "Study Measures and Definitions" are described well! How much of this classification was already encoded in the NHANES vs. part of your cleaning? 
+
+### Feedback and Comments
+
+Uninformative vraibles were removed as part of the "Data Cleaning" process. Do these porportions of HIV and other uniformative varaibles reflect the proporation of cases in the entire U.S. population? In these sorts of analyses, is it typical to cross-reference other data sets to ensure that your sample population was random and reflective of the entire population?
+
+### Summary assessment
+
+* essentially no weaknesses in wrangling and exploratory component
+
+
+### Feedback and Comments
+
+So great! The "Statistical Analyses" section is described incredibly well. It is presented in a way that is very informative - thank you! It strengthens my understanding of these methods. 
+
+### Summary assessment
+
+* strong and reasonable analysis
+
+## Presentation
+
+### Feedback and Comments
+
+The results are presented clearly. The tables include the characteristics of the study participants, and the Odds Ratio from the univariate and multivariate analyses for risk facotrs of LTBI. Table 2 seems to repeat much of the same information presented in Table 1.
+
+
+### Summary assessment
+
+* results are well presented
+
+
+## Discussion/Conclusions
+Are the study findings properly discussed? Are strengths and limitations acknowledged? Are findings interpreted properly?
+
+### Feedback and Comments
+
+The findings are discussed in a clear and concise manner. I am wondering if it accurate to say that being non-US born is a risk factor for TB. It seems that it is accurate to say that being US-born has a protective effect, but the OR for non-US born is not significant. But, I'm an outsider in this field! 
+
+
+A few questions: 
+- The Hep A virus is an infectious - is the disease Hep A classified as an infectious disease or chronic disease? Or, does NHANES classify hepititus/Hep A infection  in the same way?
+- Would you consider comorbidity of multiple chronic diseases in your evaluation?
+- The introduction suggests that tuberculosis is a problem in low-income countries with non-insulin-dependent diabetes. This analysis examined the relationship between chronic disease and TB in the U.S. Are there sources of information or comparable datasets documenting these cases in low-income countires? What about self-reported conditions documented through apps? There seems to be a growing initiative to capture health information through self-reporting health apps in low-income countries. 
+
+### Summary assessment
+
+* Complete and clear discussion
+
+
+## Further comments
+
+In the Statistical Analyses section, one value seems to be missing from the following sentence: "The factors that were associated with LTBI in a univariate analysis with *p-value ≤ were* included in multivariate regression analysis.""
+
+# Overall project content evaluation
+Evaluate overall features of the project  by filling in the sections below.
+
+
+## Structure
+
+### Feedback and Comments
+
+
+### Summary assessment
+
+* well structured
+
+
+## Documentation 
+How well is the project documented? Are you able to understand each step of the whole analysis, each decision that was made, and each line of code? Is enough information provided as comments in code or as part of Rmd files? 
+
+### Feedback and Comments
+
+The project is well-documented thruoghout the files and readme files. Clear instructions on how to replicate the results. I did have trouble running the analysis code - some of the objects were not found. Additionally, some of the code in the My_Manuscript Rmd might be better suited in the analysis Rmd. 
+
+
+The manuscript itself is structured very well and seems to be on its way to publication-quality. 
+
+
+### Summary assessment
+
+* well documented
+
+
+
+## Reproducibility
+
+
+### Feedback and Comments
+
+Had some trouble running the analysis code. It appears that some objects are missing - perhaps the were not called into the environment in the script?
+
+### Summary assessment
+
+* small parts not reproducible or required manual intervention 
+
+
+## Thoroughness
+
+### Feedback and Comments
+
+The analysis was thorough and complete. Trang invesitgated mutlivariate analyses, but these did not appear to be significant.
+
+### Summary assessment
+
+* strong level of thorougness
+
+
+
+
